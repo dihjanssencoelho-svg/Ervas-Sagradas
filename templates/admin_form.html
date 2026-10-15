@@ -1,0 +1,194 @@
+{% extends "base.html" %}
+{% set is_edit = herb is not none %}
+{% block title %}{{ 'Editar' if is_edit else 'Nova erva' }} — Admin{% endblock %}
+
+{% block content %}
+<section class="section-panel">
+  <div class="section-header">
+    <h2>{{ '✏️ Editar' if is_edit else '➕ Nova erva' }}</h2>
+    <p>{{ 'Atualize os dados do item abaixo.' if is_edit else 'Preencha os campos para cadastrar um novo item.' }}</p>
+  </div>
+
+  <form method="post" class="admin-form" id="herb-form">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <div class="form-grid">
+
+      <label>
+        Nome *
+        <input name="name" type="text" required placeholder="Ex: Camomila"
+               value="{{ herb.name if is_edit else '' }}">
+      </label>
+
+      <label>
+        Nome científico
+        <input name="sci" type="text" placeholder="Ex: Matricaria chamomilla"
+               value="{{ herb.sci if is_edit else '' }}">
+      </label>
+
+      <label>
+        Emoji
+        <input name="emoji" type="text" placeholder="Ex: 🌼" maxlength="4"
+               value="{{ herb.emoji if is_edit else '🌿' }}">
+      </label>
+
+      <label>
+        Categoria *
+        <select name="cat">
+        {% for v,l in [('erva','Erva'),('folha','Folha'),('flor','Flor'),('raiz','Raiz'),('casca','Casca'),('resina','Resina'),('semente','Semente'),('fruto','Fruto'),('liquido','Líquido / hidrolato')] %}
+          <option value="{{ v }}" {{ 'selected' if is_edit and herb.cat == v else '' }}>
+            {{ l }}
+          </option>
+          {% endfor %}
+        </select>
+      </label>
+
+      <label>
+        Temperatura *
+        <select name="temp">
+          {% for v,l in [('quente','🔥 Quente'),('fria','💧 Fria'),('morna','🌡️ Morna'),('neutra','🌬️ Neutra')] %}
+          <option value="{{ v }}" {{ 'selected' if is_edit and herb.temp == v else '' }}>{{ l }}</option>
+          {% endfor %}
+        </select>
+      </label>
+
+      <label>
+        Elemento *
+        <select name="elem">
+          {% for v,l in [('fogo','🔥 Fogo'),('água','💧 Água'),('terra','🌍 Terra'),('ar','💨 Ar')] %}
+          <option value="{{ v }}" {{ 'selected' if is_edit and herb.elem == v else '' }}>{{ l }}</option>
+          {% endfor %}
+        </select>
+      </label>
+
+      <label>
+        Pode defumar?
+        <select name="can_fumigate">
+          <option value="true"  {{ 'selected' if is_edit and herb.can_fumigate else '' }}>Sim</option>
+          <option value="false" {{ 'selected' if is_edit and not herb.can_fumigate else '' }}>Não</option>
+        </select>
+      </label>
+
+      <label>
+        Imagem URL
+        <input name="img_url" type="url" placeholder="https://…"
+               value="{{ herb.img_url if is_edit else '' }}">
+      </label>
+
+      <figure class="admin-image-preview {% if not is_edit or not herb.img_url %}hidden{% endif %}" id="image-preview">
+        <img id="image-preview-img" src="{{ herb.img_url if is_edit else '' }}" alt="Prévia da imagem do item">
+        <figcaption id="image-preview-caption">Prévia da imagem do catálogo</figcaption>
+      </figure>
+
+    </div><!-- /.form-grid -->
+
+    <label>
+      Descrição
+      <textarea name="desc" rows="3" placeholder="Descreva brevemente o uso e propriedades.">{{ herb.desc if is_edit else '' }}</textarea>
+    </label>
+
+    <label>
+      Propriedades espirituais
+      <textarea name="spiritual" rows="3" placeholder="Ex: Proteção, purificação.">{{ herb.spiritual if is_edit else '' }}</textarea>
+    </label>
+
+    <label>
+      Descrição da defumação
+      <textarea name="fumig" rows="2" placeholder="Descreva como defumar com este item.">{{ herb.fumig if is_edit else '' }}</textarea>
+    </label>
+
+    <label>
+      Contraindicações e limitações conhecidas
+      <textarea name="contraindications" rows="3" maxlength="2000">{{ herb.contraindications if is_edit else 'Não avaliadas individualmente; não presumir segurança para ingestão ou uso tópico.' }}</textarea>
+    </label>
+
+    <label>
+      Fontes específicas revisadas (referências/URLs)
+      <textarea name="medical_sources" rows="3" maxlength="2000" placeholder="Inclua fontes que correspondam ao nome científico desta espécie.">{{ herb.medical_sources if is_edit else 'Sem referência específica revisada para esta espécie.' }}</textarea>
+    </label>
+    <p class="form-help">Não registre indicação medicinal sem fonte confiável e revisão das contraindicações. As referências gerais exibidas no catálogo não validam automaticamente cada ficha.</p>
+
+    <div class="form-grid">
+      <label>
+        Usos em banho
+        <input name="bath_uses" type="text" placeholder="Proteção, Limpeza, Amor"
+               value="{{ herb.bath_uses | join(', ') if is_edit else '' }}">
+      </label>
+
+      <label>
+        Usos em chá
+        <input name="tea_uses" type="text" placeholder="Sono, Calma, Força"
+               value="{{ herb.tea_uses | join(', ') if is_edit else '' }}">
+      </label>
+
+      <label>
+        Orixás
+        <input name="orixas" type="text" placeholder="Ex: Oxum, Iemanjá"
+               value="{{ herb.orixas | join(', ') if is_edit else '' }}">
+      </label>
+
+      <label>
+        Compatíveis
+        <input name="compat" type="text" placeholder="Nomes separados por vírgula"
+               value="{{ herb.compat | join(', ') if is_edit else '' }}">
+      </label>
+
+      <label>
+        Incompatíveis
+        <input name="incompat" type="text" placeholder="Nomes separados por vírgula"
+               value="{{ herb.incompat | join(', ') if is_edit else '' }}">
+      </label>
+
+      <label>
+        Preparo
+        <input name="preparo" type="text" placeholder="Ex: Banho na sexta-feira."
+               value="{{ herb.preparo if is_edit else '' }}">
+      </label>
+    </div>
+
+    <!-- Recomendações -->
+    <fieldset class="form-fieldset">
+      <legend>Recomendações</legend>
+      <div class="form-grid-checkbox">
+        <label>
+          <input type="checkbox" name="rec_banho"
+                 {{ 'checked' if is_edit and 'banho' in herb.recommended else '' }}>
+          Recomendado para banho
+        </label>
+        <label>
+          <input type="checkbox" name="rec_cha"
+                 {{ 'checked' if is_edit and 'cha' in herb.recommended else '' }}>
+          Recomendado para chá
+        </label>
+        <label>
+          <input type="checkbox" name="rec_defumacao"
+                 {{ 'checked' if is_edit and 'defumacao' in herb.recommended else '' }}>
+          Recomendado para defumação
+        </label>
+      </div>
+    </fieldset>
+
+    <div class="form-actions">
+      <button type="submit" class="action-btn btn-green">
+        {{ '💾 Salvar alterações' if is_edit else '✅ Cadastrar item' }}
+      </button>
+      <a href="{{ url_for('admin') }}" class="action-btn btn-muted">Cancelar</a>
+    </div>
+  </form>
+</section>
+{% endblock %}
+
+{% block scripts %}
+<script>
+  const imageInput = document.querySelector('[name="img_url"]');
+  const preview = document.getElementById('image-preview');
+  const previewImage = document.getElementById('image-preview-img');
+  const previewCaption = document.getElementById('image-preview-caption');
+  imageInput?.addEventListener('input', () => {
+    const url = imageInput.value.trim();
+    if (!url) { preview.classList.add('hidden'); return; }
+    previewImage.onload = () => { preview.classList.remove('hidden'); previewCaption.textContent = 'Prévia carregada'; };
+    previewImage.onerror = () => { preview.classList.remove('hidden'); previewCaption.textContent = 'Não foi possível carregar esta imagem'; };
+    previewImage.src = url;
+  });
+</script>
+{% endblock %}
