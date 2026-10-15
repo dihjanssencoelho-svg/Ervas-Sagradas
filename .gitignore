@@ -1,0 +1,30 @@
+# Dados e arquivos locais
+*.db
+*.sqlite
+*.sqlite3
+*.db-wal
+*.db-shm
+.env
+.env.*
+!.env.example
+instance/
+
+# Python e ambientes virtuais
+__pycache__/
+*.py[cod]
+*$py.class
+*.pyo
+venv/
+env/
+.venv/
+ENV/
+
+# IDEs, sistema e temporários
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+desktop.ini
+*.log
+*.tmp
+*.temp
