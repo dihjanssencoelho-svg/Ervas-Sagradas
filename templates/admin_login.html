@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+{% block title %}Entrar — Administração{% endblock %}
+{% block content %}
+<section class="section-panel login-panel">
+  {% if admin_configured is defined and not admin_configured %}
+  <div class="section-header">
+    <h2>Painel administrativo indisponível</h2>
+    <p>As credenciais do administrador ainda não foram configuradas neste servidor. O painel continua protegido.</p>
+  </div>
+  <div class="admin-setup-help">
+    <strong>Para habilitar o acesso em desenvolvimento:</strong>
+    <code>$env:ADMIN_USERNAME = "admin"</code>
+    <code>$env:ADMIN_PASSWORD_HASH = python -c "from werkzeug.security import generate_password_hash; print(generate_password_hash(input('Nova senha: ')))"</code>
+    <p>Defina essas variáveis no terminal antes de iniciar <code>python app.py</code>.</p>
+  </div>
+  {% else %}
+  <div class="section-header">
+    <h2>Entrar no painel</h2>
+    <p>A área administrativa exige credenciais configuradas pelo responsável pela aplicação.</p>
+  </div>
+  <form method="post" class="admin-form">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <label>Usuário<input name="username" type="text" autocomplete="username" required maxlength="120"></label>
+    <label>Senha<input name="password" type="password" autocomplete="current-password" required maxlength="1024"></label>
+    <button type="submit" class="action-btn btn-green">Entrar</button>
+  </form>
+  {% endif %}
+</section>
+{% endblock %}
