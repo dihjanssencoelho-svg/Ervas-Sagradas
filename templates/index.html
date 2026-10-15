@@ -1,0 +1,123 @@
+{% extends "base.html" %}
+{% block title %}Enciclopédia das Ervas Sagradas{% endblock %}
+
+{% block content %}
+<!-- Apresentação -->
+<section class="hero hero-dashboard">
+  <div class="hero-copy">
+    <span class="hero-eyebrow">CATÁLOGO BOTÂNICO-CULTURAL</span>
+    <h1>Conheça as ervas, suas histórias e tradições</h1>
+    <p>Explore plantas e ingredientes com fotos, nomes científicos e referências culturais em um só lugar.</p>
+    <a class="hero-link" href="#filter-section">Explorar catálogo <span aria-hidden="true">↓</span></a>
+  </div>
+  <figure class="hero-visual">
+    <img src="https://thumb.wikimedia.org/wikipedia/commons/thumb/0/09/Rosemary_Plant.jpg/960px-Rosemary_Plant.jpg"
+         alt="Arbusto de alecrim, Rosmarinus officinalis" fetchpriority="high" onerror="handleImageError(this)">
+    <figcaption>Alecrim · <a href="https://commons.wikimedia.org/wiki/File:Rosemary_Plant.jpg" target="_blank" rel="noopener noreferrer">Jane6592 (CC BY-SA 4.0) · Wikimedia Commons</a></figcaption>
+  </figure>
+</section>
+
+<!-- Indicadores -->
+<section class="dashboard-panels" aria-label="Resumo do catálogo">
+  <article class="dashboard-card"><span>Ervas e itens</span><strong id="dash-total">{{ stats.total }}</strong></article>
+  <article class="dashboard-card"><span>Associações com banho</span><strong id="dash-banho">{{ stats.banho }}</strong></article>
+  <article class="dashboard-card"><span>Registros internos</span><strong id="dash-cha">{{ stats.cha }}</strong></article>
+  <article class="dashboard-card"><span>Associações com defumação</span><strong id="dash-defumacao">{{ stats.defumacao }}</strong></article>
+</section>
+
+<!-- Controles -->
+<section class="controls">
+  <div class="tabs" role="tablist">
+    <button class="tab-btn active" data-tab="ervas"    role="tab">Todas</button>
+    <button class="tab-btn"        data-tab="banho"    role="tab">Banhos</button>
+    <button class="tab-btn"        data-tab="defumacao" role="tab">Defumações</button>
+    <button class="tab-btn"        data-tab="chas"     role="tab">Chás</button>
+    <button class="tab-btn"        data-tab="rituais"  role="tab">Rituais</button>
+  </div>
+
+  <!-- Filtros (visíveis só na aba Todas) -->
+  <div id="filter-section" class="filters">
+    <label class="filter-group">
+      <span>Buscar</span>
+      <input id="search" type="search" placeholder="Nome, orixá, uso…">
+    </label>
+    <label class="filter-group">
+      <span>Temperatura</span>
+      <select id="filter-temp">
+        <option value="">Todas</option>
+        <option value="quente">🔥 Quente</option>
+        <option value="fria">💧 Fria</option>
+        <option value="morna">🌡️ Morna</option>
+        <option value="neutra">🌬️ Neutra</option>
+      </select>
+    </label>
+    <label class="filter-group">
+      <span>Elemento</span>
+      <select id="filter-elem">
+        <option value="">Todos</option>
+        <option value="fogo">🔥 Fogo</option>
+        <option value="água">💧 Água</option>
+        <option value="terra">🌍 Terra</option>
+        <option value="ar">💨 Ar</option>
+      </select>
+    </label>
+    <label class="filter-group">
+      <span>Categoria</span>
+      <select id="filter-cat">
+        <option value="">Todas</option>
+        <option value="erva">Erva</option>
+        <option value="folha">Folha</option>
+        <option value="flor">Flor</option>
+        <option value="raiz">Raiz</option>
+        <option value="casca">Casca</option>
+        <option value="resina">Resina</option>
+        <option value="semente">Semente</option>
+        <option value="fruto">Fruto</option>
+        <option value="liquido">Líquido / hidrolato</option>
+      </select>
+    </label>
+    <div class="count-badge">Exibindo <strong id="showing-count">—</strong> itens</div>
+  </div>
+
+  <!-- Painel de comparação -->
+  <section id="compare-panel" class="compare-panel hidden">
+    <div class="section-header">
+      <h3>Comparar itens selecionados</h3>
+      <p>Selecione até 3 itens para analisar compatibilidade, usos e motivos detalhados.</p>
+    </div>
+    <div id="compare-selected-items" class="compare-selected-items">
+      <span class="compare-placeholder">Selecione até 3 itens na aba Todas para comparar.</span>
+    </div>
+    <button id="compare-button" class="action-btn" type="button" disabled>Comparar itens</button>
+    <div id="compare-result" class="compare-result"></div>
+  </section>
+</section>
+
+<!-- Grid principal -->
+<main id="main-section">
+  <div id="herb-grid"   class="herb-grid"></div>
+  <div id="ritual-grid" class="ritual-grid hidden"></div>
+</main>
+
+<!-- Modal de detalhes -->
+<div class="modal-overlay" id="modal-overlay" aria-hidden="true">
+  <div class="modal" id="modal-content" role="dialog" aria-modal="true" aria-labelledby="modal-name">
+    <button class="modal-close" type="button" id="modal-close-btn" aria-label="Fechar detalhes">✕</button>
+    <div class="modal-image" id="modal-image"></div>
+    <div class="modal-body">
+      <div class="modal-heading">
+        <div>
+          <h2 id="modal-name"></h2>
+          <p id="modal-sci" class="modal-sci"></p>
+        </div>
+        <div id="modal-badges" class="modal-badges"></div>
+      </div>
+      <div id="modal-sections"></div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/app.js', v=6) }}"></script>
+{% endblock %}
