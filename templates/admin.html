@@ -1,0 +1,147 @@
+{% extends "base.html" %}
+{% block title %}Administrador — Enciclopédia das Ervas{% endblock %}
+
+{% block content %}
+<section class="section-panel">
+  <div class="section-header">
+    <h2>⚙️ Administrador</h2>
+    <p>Gerencie todos os itens cadastrados na enciclopédia.</p>
+  </div>
+
+  <!-- Estatísticas -->
+  <div class="dashboard-panels" style="margin-top:0">
+    <article class="dashboard-card"><span>Total</span><strong>{{ stats.total }}</strong></article>
+    <article class="dashboard-card"><span>Banhos</span><strong>{{ stats.banho }}</strong></article>
+    <article class="dashboard-card"><span>Registros internos (não verificados)</span><strong>{{ stats.cha }}</strong></article>
+    <article class="dashboard-card"><span>Defumações</span><strong>{{ stats.defumacao }}</strong></article>
+  </div>
+
+  <!-- Barra de ações -->
+  <div class="admin-topbar">
+    <a href="{{ url_for('admin_nova') }}" class="action-btn btn-green">+ Novo item</a>
+    <form method="get" class="admin-search-form">
+      <input name="q"   type="search" placeholder="Buscar por nome, científico, orixá…" value="{{ q }}" class="admin-search-input">
+      <select name="cat" class="admin-cat-select">
+        <option value="">Todas as categorias</option>
+        {% for v,l in [('erva','Erva'),('folha','Folha'),('flor','Flor'),('raiz','Raiz'),
+                       ('casca','Casca'),('resina','Resina'),('semente','Semente'),('fruto','Fruto'),('liquido','Líquido / hidrolato')] %}
+        <option value="{{ v }}" {% if cat == v %}selected{% endif %}>{{ l }}</option>
+        {% endfor %}
+      </select>
+      <button type="submit" class="action-btn">Filtrar</button>
+      {% if q or cat %}
+        <a href="{{ url_for('admin') }}" class="action-btn btn-muted">Limpar</a>
+      {% endif %}
+    </form>
+  </div>
+
+  <section class="user-management" aria-labelledby="user-management-title">
+    <div class="section-header">
+      <h3 id="user-management-title">Contas para visualizar o catálogo</h3>
+      <p>Crie logins de leitura. Essas contas acessam as abas públicas, mas não podem alterar o catálogo nem abrir o painel.</p>
+    </div>
+    <form method="post" action="{{ url_for('admin_create_user') }}" class="admin-form user-create-form">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <label>Login<input name="username" type="text" required minlength="3" maxlength="80" autocomplete="off"></label>
+      <label>Senha<input name="password" type="password" required minlength="8" maxlength="128" autocomplete="new-password"></label>
+      <label>Confirmar senha<input name="password_confirm" type="password" required minlength="8" maxlength="128" autocomplete="new-password"></label>
+      <button type="submit" class="action-btn btn-green">Criar acesso</button>
+    </form>
+    {% if users %}
+    <div class="admin-table-wrapper">
+      <table class="admin-table">
+        <thead><tr><th>Login</th><th>Criado em</th><th>Ação</th></tr></thead>
+        <tbody>
+          {% for user in users %}
+          <tr>
+            <td>{{ user.username }}</td>
+            <td>{{ user.created_at }}</td>
+            <td>
+              <form method="post" action="{{ url_for('admin_remove_user', user_id=user.id) }}" onsubmit="return confirm('Remover o acesso de {{ user.username }}?')">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <button type="submit" class="action-btn btn-sm btn-danger">Remover acesso</button>
+              </form>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% else %}
+    <p class="no-results">Ainda não há contas de visualização cadastradas.</p>
+    {% endif %}
+  </section>
+
+  <p class="admin-count-label">
+    <strong>{{ items|length }}</strong> ite{{ 'm' if items|length == 1 else 'ns' }} encontrado{{ '' if items|length == 1 else 's' }}
+  </p>
+
+  <!-- Tabela de itens -->
+  {% if items %}
+  <div class="admin-table-wrapper">
+    <table class="admin-table">
+      <thead>
+        <tr>
+          <th>Item</th>
+          <th>Categoria</th>
+          <th>Temperatura</th>
+          <th>Elemento</th>
+          <th>Orixás</th>
+          <th>Usos</th>
+          <th>Tipo</th>
+          <th>Ações</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for h in items %}
+        <tr>
+          <td>
+            <div class="admin-item-name">
+              {% if h.img_url %}<img class="admin-item-thumb" src="{{ h.img_url }}" alt="" loading="lazy" onerror="this.hidden=true;this.nextElementSibling.hidden=false">{% endif %}
+              <span class="admin-emoji" {% if h.img_url %}hidden{% endif %}>{{ h.emoji }}</span>
+              <div>
+                <strong>{{ h.name }}</strong>
+                {% if h.sci %}<small>{{ h.sci }}</small>{% endif %}
+              </div>
+            </div>
+          </td>
+          <td><span class="tag badge-cat">{{ 'Líquido / hidrolato' if h.cat == 'liquido' else h.cat }}</span></td>
+          <td>
+            <span class="tag temp-badge temp-{{ h.temp }}">
+              {{ {'quente':'🔥','fria':'💧','morna':'🌡️','neutra':'🌬️'}[h.temp] }} {{ h.temp }}
+            </span>
+          </td>
+          <td>{{ h.elem }}</td>
+          <td class="admin-orixas">{{ h.orixas | join(', ') if h.orixas else '—' }}</td>
+          <td class="admin-uses">
+            {% if 'banho' in h.recommended %}<span class="tag">Banho</span>{% endif %}
+            {% if 'cha' in h.recommended %}<span class="tag cha">Uso interno não verificado</span>{% endif %}
+            {% if 'defumacao' in h.recommended %}<span class="tag fumigar">Defumação</span>{% endif %}
+          </td>
+          <td>
+            {% if h.is_custom %}
+              <span class="tag badge-custom">Personalizado</span>
+            {% else %}
+              <span class="tag badge-original">Original</span>
+            {% endif %}
+          </td>
+          <td>
+            <div class="admin-actions-cell">
+              <a href="{{ url_for('admin_editar', herb_id=h.id) }}" class="action-btn btn-sm">Editar</a>
+              <form method="post" action="{{ url_for('admin_remover', herb_id=h.id) }}"
+                    onsubmit="return confirm('Remover {{ h.name }}?')">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <button type="submit" class="action-btn btn-sm btn-danger">Remover</button>
+              </form>
+            </div>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  <div class="no-results">Nenhum item encontrado para os filtros aplicados.</div>
+  {% endif %}
+</section>
+{% endblock %}
