@@ -14,11 +14,11 @@ $env:ADMIN_PASSWORD_HASH = py -c "from werkzeug.security import generate_passwor
 py app.py
 ```
 
-Abra `http://127.0.0.1:5000`. O login de visualização fica em `/login`; o painel administrativo fica em `/admin`. Em desenvolvimento, as credenciais podem ser configuradas por variáveis de ambiente ou pelo arquivo local ignorado `instance/admin_credentials.json`. O painel nunca fica aberto sem autenticação.
+Abra `http://127.0.0.1:5000`; o cat?logo ? p?blico e n?o exige conta. O painel administrativo fica em `/admin`. Em desenvolvimento, as credenciais podem ser configuradas por vari?veis de ambiente ou pelo arquivo local ignorado `instance/admin_credentials.json`. O painel nunca fica aberto sem autentica??o.
 
-## Contas de visualização
+## Acesso ao cat?logo
 
-O administrador entra pelo link **Admin** e cria contas na seção **Contas para visualizar o catálogo**. Cada conta recebe um login e uma senha inicial, que devem ser compartilhados diretamente com a pessoa usuária. As senhas ficam armazenadas somente como hashes no SQLite. Essas contas permitem ler o catálogo, as fichas e as abas de banhos, chás e defumações; não concedem acesso administrativo. O administrador também pode remover um acesso pelo painel.
+O cat?logo e a API s?o p?blicos. Somente o painel administrativo exige usu?rio e senha; n?o h? contas de leitores.
 
 ## Publicação
 
@@ -56,3 +56,4 @@ static/js/              filtros, modal, comparação e tema
 requirements.txt        dependências
 Procfile                inicialização de produção com Gunicorn
 ```
+
