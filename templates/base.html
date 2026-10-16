@@ -29,20 +29,12 @@
           {% if admin_authenticated %}
           <a href="{{ url_for('admin') }}" class="action-btn {% if request.endpoint and 'admin' in request.endpoint %}active{% endif %}">⚙️ Admin</a>
           <a href="{{ url_for('index') }}" class="action-btn {% if request.endpoint == 'index' %}active{% endif %}">🌿 Ervas</a>
-          <form method="post" action="{{ url_for('logout') }}" class="inline-form">
-            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-            <button type="submit" class="action-btn">Sair</button>
-          </form>
-          {% elif catalog_authenticated %}
-          <span class="action-btn">{{ catalog_username }}</span>
-          <a href="{{ url_for('index') }}" class="action-btn {% if request.endpoint == 'index' %}active{% endif %}">🌿 Ervas</a>
-          <form method="post" action="{{ url_for('logout') }}" class="inline-form">
+          <form method="post" action="{{ url_for('admin_logout') }}" class="inline-form">
             <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
             <button type="submit" class="action-btn">Sair</button>
           </form>
           {% else %}
           <a href="{{ url_for('admin_login') }}" class="action-btn {% if request.endpoint == 'admin_login' %}active{% endif %}">⚙️ Admin</a>
-          <a href="{{ url_for('login') }}" class="action-btn {% if request.endpoint == 'login' %}active{% endif %}">Entrar</a>
           {% endif %}
           <button id="theme-toggle" class="action-btn theme-toggle" type="button" aria-label="Alternar tema">🌗</button>
         </div>
@@ -67,3 +59,4 @@
   {% block scripts %}{% endblock %}
 </body>
 </html>
+
