@@ -7,7 +7,6 @@ import json
 import sqlite3
 import os
 import secrets
-import re
 from pathlib import Path
 from functools import wraps
 from urllib.parse import urlparse
@@ -70,36 +69,15 @@ def inject_template_security():
     return {
         "csrf_token": csrf_token,
         "admin_authenticated": bool(session.get("admin_authenticated")),
-        "catalog_authenticated": bool(session.get("admin_authenticated") or session.get("catalog_user_id")),
-        "catalog_username": session.get("catalog_username", ""),
     }
 
 @app.before_request
 def validate_admin_csrf():
-    if request.method == "POST" and (request.path.startswith("/admin/") or request.path in {"/login", "/logout"}):
+    if request.method == "POST" and request.path.startswith("/admin/"):
         supplied = request.form.get("csrf_token", "")
         expected = session.get("csrf_token", "")
         if not supplied or not secrets.compare_digest(supplied, expected):
             abort(400, description="Token de segurança inválido. Recarregue a página e tente novamente.")
-
-@app.before_request
-def require_catalog_login():
-    if request.endpoint in {"static", "login", "logout", "admin_login"} or request.path.startswith("/admin"):
-        return None
-    if session.get("admin_authenticated"):
-        return None
-    user_id = session.get("catalog_user_id")
-    if user_id:
-        user = get_db().execute(
-            "SELECT username FROM catalog_users WHERE id=? AND active=1", (user_id,)
-        ).fetchone()
-        if user:
-            session["catalog_username"] = user["username"]
-            return None
-        session.clear()
-    if request.path.startswith("/api/"):
-        return jsonify({"error": "Entre para acessar o catálogo."}), 401
-    return redirect(url_for("login", next=request.path))
 
 # ── Banco de Dados ────────────────────────────────────────────────────────────
 
@@ -238,13 +216,6 @@ def init_db():
     db.execute("PRAGMA journal_mode = WAL")
 
     db.executescript("""
-    CREATE TABLE IF NOT EXISTS catalog_users (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        username TEXT NOT NULL COLLATE NOCASE UNIQUE,
-        password_hash TEXT NOT NULL,
-        active INTEGER NOT NULL DEFAULT 1,
-        created_at TEXT DEFAULT (datetime('now'))
-    );
     CREATE TABLE IF NOT EXISTS ervas (
         id          INTEGER PRIMARY KEY AUTOINCREMENT,
         name        TEXT    NOT NULL,
@@ -431,48 +402,6 @@ def api_comparar():
                           "reason": _compat_reason(a, b)})
     return jsonify({"herbs": herbs, "pairs": pairs})
 
-@app.route("/login", methods=["GET", "POST"])
-def login():
-    if session.get("admin_authenticated") or session.get("catalog_user_id"):
-        return redirect(url_for("index"))
-    if request.method == "POST":
-        username = request.form.get("username", "").strip()
-        password = request.form.get("password", "")
-        if (
-            ADMIN_USERNAME
-            and ADMIN_PASSWORD_HASH
-            and secrets.compare_digest(username, ADMIN_USERNAME)
-            and check_password_hash(ADMIN_PASSWORD_HASH, password)
-        ):
-            session.clear()
-            session["admin_authenticated"] = True
-            session["csrf_token"] = secrets.token_urlsafe(32)
-            destination = request.args.get("next", "")
-            if not destination.startswith("/") or destination.startswith("//"):
-                destination = url_for("index")
-            return redirect(destination)
-        user = get_db().execute(
-            "SELECT id, username, password_hash FROM catalog_users WHERE username=? COLLATE NOCASE AND active=1",
-            (username,),
-        ).fetchone()
-        if user and check_password_hash(user["password_hash"], password):
-            session.clear()
-            session["catalog_user_id"] = user["id"]
-            session["catalog_username"] = user["username"]
-            session["csrf_token"] = secrets.token_urlsafe(32)
-            destination = request.args.get("next", "")
-            if not destination.startswith("/") or destination.startswith("//") or destination.startswith("/admin"):
-                destination = url_for("index")
-            return redirect(destination)
-        flash("Login ou senha inválidos ou conta desativada.", "error")
-    return render_template("login.html")
-
-@app.route("/logout", methods=["POST"])
-def logout():
-    session.clear()
-    flash("Sessão encerrada.", "info")
-    return redirect(url_for("login"))
-
 def parse_herb_form(form):
     allowed = {
         "temp": {"quente", "fria", "morna", "neutra"},
@@ -567,49 +496,7 @@ def admin():
 
     rows  = db.execute(sql, params).fetchall()
     items = [row_to_dict(r) for r in rows]
-    users = db.execute(
-        "SELECT id, username, created_at FROM catalog_users WHERE active=1 ORDER BY username"
-    ).fetchall()
-    return render_template("admin.html", items=items, stats=stats, q=q, cat=cat, users=users)
-
-@app.route("/admin/usuarios", methods=["POST"])
-@admin_required
-def admin_create_user():
-    username = request.form.get("username", "").strip()
-    password = request.form.get("password", "")
-    confirmation = request.form.get("password_confirm", "")
-    if not re.fullmatch(r"[\w.@+-]{3,80}", username, flags=re.UNICODE):
-        flash("Use um login de 3 a 80 caracteres (letras, números, ponto, @, +, _ ou -).", "error")
-        return redirect(url_for("admin"))
-    if not 8 <= len(password) <= 128:
-        flash("A senha do usuário deve ter entre 8 e 128 caracteres.", "error")
-        return redirect(url_for("admin"))
-    if password != confirmation:
-        flash("As senhas não conferem.", "error")
-        return redirect(url_for("admin"))
-    db = get_db()
-    try:
-        db.execute(
-            "INSERT INTO catalog_users (username, password_hash) VALUES (?, ?)",
-            (username, generate_password_hash(password)),
-        )
-        db.commit()
-    except sqlite3.IntegrityError:
-        flash("Já existe uma conta com esse login.", "error")
-        return redirect(url_for("admin"))
-    flash(f"Conta de acesso criada para {username}.", "success")
-    return redirect(url_for("admin"))
-
-@app.route("/admin/usuarios/<int:user_id>/remover", methods=["POST"])
-@admin_required
-def admin_remove_user(user_id):
-    db = get_db()
-    user = db.execute("SELECT username FROM catalog_users WHERE id=?", (user_id,)).fetchone()
-    if user:
-        db.execute("DELETE FROM catalog_users WHERE id=?", (user_id,))
-        db.commit()
-        flash(f"Conta de acesso de {user['username']} removida.", "info")
-    return redirect(url_for("admin"))
+    return render_template("admin.html", items=items, stats=stats, q=q, cat=cat)
 
 @app.route("/admin/nova", methods=["GET","POST"])
 @admin_required
@@ -1998,3 +1885,4 @@ if __name__ == "__main__":
     print(f"  http://localhost:{run_port}")
     print("=" * 55)
     app.run(debug=APP_ENV == "development", host=os.environ.get("HOST", "127.0.0.1"), port=run_port)
+
